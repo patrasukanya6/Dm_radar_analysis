@@ -19,7 +19,7 @@ from math import sin, cos, sqrt, atan2, radians
 from datetime import datetime, timedelta
 from sys import argv
 import os
-from Dm_quicklooks_earthcare import Dm_radar_for_earthcare
+from Dm_radar_estimation_function import Dm_radar_estimation
 import requests
 scriptname,date, pathOutputData ,pathDmData_tempfilter , DiffRadarPlots = argv
 
@@ -62,7 +62,7 @@ try:
     logger.info('Dm retrieval from DDV starts')
 
     ####-------------------------------extracting the ground based radar Dm from the nc file-------------------
-    dataset=Dm_radar_for_earthcare(date,pathOutputData)
+    dataset=Dm_radar_estimation(date,pathOutputData)
     Dm_radar=dataset['Dm_radar']
     Dm_radar=Dm_radar.where(Dm_radar>=0)
     logger.info('Dm retrieval from DDV ends')
