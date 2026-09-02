@@ -35,7 +35,7 @@ immediately. `
 import psutil
 import shutil
 from sys import argv
-import create_cmap as ccm
+
 import os
 from HTI_PLOT_general_final import HTI_plot
 import xarray as xr
