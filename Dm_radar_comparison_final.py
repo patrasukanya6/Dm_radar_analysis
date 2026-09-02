@@ -1,3 +1,29 @@
+"""Create temperature-filtered radar Dm comparison data for one day.
+
+The script is invoked with five positional command-line arguments::
+
+    python Dm_radar_comparison_final.py SCRIPT_NAME DATE OUTPUT_DIR 
+        Dm_radar_TEMP_FILTER_DIR PLOT_DIR
+
+``DATE`` is parsed by pandas and identifies the day to process.  The workflow
+retrieves radar mass-weighted mean equivolume diameter (Dm), removes insect
+classified pixels, downloads the day's Cloudnet ECMWF temperature file, and
+keeps radar values warmer than 276 K.  The filtered values and matching
+temperatures are flattened and written to a daily NetCDF file.  A quicklook
+plot is written when at least one valid Dm value remains.
+
+OUTPUT_DIR is the directory where the radar Dm and Cloudnet classification files are
+expected to be found.  
+
+Dm_radar_TEMP_FILTER_DIR is the directory where the flattened
+NetCDF file is written.  
+
+PLOT_DIR is the directory where the quicklook plot is saved.
+
+This module intentionally remains a script: all processing occurs at import
+time because the command-line arguments are consumed immediately.
+"""
+
 from scipy.interpolate import interp1d
 from itertools import count
 import pandas as pd
@@ -58,7 +84,7 @@ date1=date.strftime('%Y-%m-%d')
 
 
 try:
-    
+    # Radar retrieval returns Dm on the radar time/range grid.
     logger.info('Dm retrieval from DDV starts')
 
     ####-------------------------------extracting the ground based radar Dm from the nc file-------------------
@@ -67,7 +93,8 @@ try:
     Dm_radar=Dm_radar.where(Dm_radar>=0)
     logger.info('Dm retrieval from DDV ends')
 
-###-------------------------insects filtering with the help og the CloudNet classification data------------
+    # Reindex Cloudnet classification to the radar reference grid before
+    # removing insect-only and insect/aerosol classification values.
     
     logger.info('biota filtering starts')
 
@@ -96,7 +123,8 @@ try:
     if (len(np.where(~np.isnan(Dm_radar[:,:112]))[0]) > (7884*112*20)/100 ):# condition of 50% of Dm_radar data should not be nan;for removing cases with small rain duratio#n; i did not take full range(334), I took upto 4000 m which comes at Dm_radar.range[112] because thats the maximum height for rain
 ## though the total no of profils are 21600 (24*15*60), since zenith scan is not continuous, it is for 1314 sec in one hour (219 sce * 6 scans per hour), and hence in a day #total zenith scan duration is 31536 (1314*24), and radar resolution is 4 sec, so the no of profiles would be 7884 (31536/4) i.e the Maximum no of points in a day in one r#ange bin assuming there is cloud throughout the zen scan,hence the total no of maximum data points considering all the range bins upto 4 km is 112*7884
 
-######------------------Download ERA-5 model temperature data from cloudnet site (becauise it is FASTER than ERA-5 site)---------------------
+    # Cloudnet provides the ECMWF/ERA-5 temperature file more quickly
+    # than querying the upstream ERA-5 service directly.
         logger.info('temperature data from CloudNet  download starts')
 
         url = 'https://cloudnet.fmi.fi/api/model-files'
@@ -158,6 +186,8 @@ try:
         #print(os.path.join(DiffRadarPlots, my_file))
 
 
+        # Rain Dm is retained only where the model temperature is above the
+        # 276 K melting-layer threshold used by this processing chain.
         Dm_radar=Dm_radar.where(temperature.values>276)
 
         if (~np.isnan(np.nanmean(Dm_radar))):
@@ -171,7 +201,7 @@ try:
         #print(len(np.where(~np.isnan(Dm_radar[:,:112]))[0]))
 
         #if (len(np.where(~np.isnan(Dm_radar[:,:56]))[0]) > (7884*56*20)/100):# condition of 50% of Dm_radar data should not be nan;for removing cases with small rain duratio#n; i did not take full range(334), I took upto 2000 m which comes at Dm_radar.range[56] because after temperature correction normally cloud goes upto 2 km
-        
+            # Drop entirely empty time and range bins before serialisation;        
             temperature=temperature[:,np.where(~np.isnan(np.nanmean(Dm_radar,axis=0)))[0]]
             Dm_radar=Dm_radar[:,np.where(~np.isnan(np.nanmean(Dm_radar,axis=0)))[0]]
             
@@ -182,6 +212,8 @@ try:
            
             logger.info('saving the data')
 
+
+            # flattening keeps Dm and temperature aligned element by element.
             df= xr.Dataset({})
             df['Dm_radar']=Dm_radar.values.flatten()
             df['temperature']=temperature.values.flatten()
