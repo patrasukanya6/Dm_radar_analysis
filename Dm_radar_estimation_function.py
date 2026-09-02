@@ -13,7 +13,7 @@ import glob
 import smtplib
 
 
-def Dm_radar_for_earthcare(date,pathOutputData):
+def Dm_radar_estimation(date,pathOutputData):
 
     date = pd.to_datetime(date)
     date1=date.strftime('%Y-%m-%d')
