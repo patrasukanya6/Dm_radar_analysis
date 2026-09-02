@@ -1,3 +1,20 @@
+"""Create a temperature-matched disdrometer Dm dataset for one day.
+
+The script is invoked with four positional command-line arguments::
+
+    python Dm_Disdrometer_comparison.py SCRIPT_NAME DATE OUTPUT_DIR DISDROMETER_DIR
+
+``DATE`` identifies the processing day.  The workflow downloads the daily
+Cloudnet ECMWF model file, calculates mass-weighted mean diameter (Dm) from
+Parsivel disdrometer measurements, removes invalid values and non-rain cases,
+and matches each disdrometer timestamp with the nearest model temperature at
+the MIM station height (approximately 538 m AMSL).
+
+The resulting Dm and temperature time series are written to
+``OUTPUT_DIR/YYYYMMDD_Dm_disdrometer_comparison_Temp.nc``.  The script runs at
+import time because it reads its command-line arguments immediately.
+"""
+
 from scipy.interpolate import interp1d
 from itertools import count
 import pandas as pd
@@ -19,10 +36,10 @@ from math import sin, cos, sqrt, atan2, radians
 from datetime import datetime, timedelta
 from sys import argv
 import os
-from Dm_quicklooks_earthcare import Dm_radar_for_earthcare
-import cdsapi
+
 import requests
-from Dm_Calculation import Dm_Cal
+from Dm_Calculation_for_disdrometer import Dm_Cal
+
 scriptname, date, pathOutputData, pathDisdrometer = argv
 
 import logging
@@ -57,8 +74,8 @@ day=date.strftime('%d')
 date1=date.strftime('%Y-%m-%d')
 
 try:
-    
-    #################------------------downloading temperature data from ERA-5 site directly-----------------
+    # Download the model file from Cloudnet, which provides the ECMWF data
+    # used for the temperature match below.
     logger.info('temperature data from CloudNet  download starts')
 
     url = 'https://cloudnet.fmi.fi/api/model-files'
@@ -83,6 +100,8 @@ try:
     fn_disdro=pathDisdrometer+date.strftime('%Y')+'/'+date.strftime('%m')+'/'+date.strftime('%Y')+date.strftime('%m')+date.strftime('%d')+'_parsivel2.nc'
     dataset_disdro=xr.open_dataset(fn_disdro)
     Dm_parsivel= Dm_Cal(date, pathDisdrometer)
+    # Exclude invalid Dm values, solid precipitation, and measurements made
+    # while the disdrometer housing was at or below 3 degrees C.
     Dm_parsivel[Dm_parsivel<0]=np.nan
 
     Dm_parsivel[np.where(dataset_disdro['wawa']>61)]=np.nan  ## to extract the cases for snow and haili
@@ -91,7 +110,8 @@ try:
     Dm_parsivel=Dm_parsivel.assign_coords(dim_0=dataset_disdro.time.values)
     Dm_parsivel=Dm_parsivel.rename({'dim_0':'time'})
 
-    ###-----extracting the indices for which height is at 538 m (MIM location AMSL)----------------------------
+    # Extract one model level near the MIM station elevation (490-560 m AMSL)
+    # for each model timestamp, then align it to disdrometer timestamps.
     temp_dis=[]
     for i in range(0, dataset_temp.height.shape[0]):temp_dis.append(temperature1[i,np.where(np.logical_and(dataset_temp.height[i, :].values > 490, dataset_temp.height[i, :].values < 560))[0][0]].values)
     temp_dis=xr.DataArray(temp_dis)
