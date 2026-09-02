@@ -43,7 +43,7 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import shutil
-from Dm_Calculation import Dm_Cal 
+from Dm_Calculation_for_disdrometer import Dm_Cal 
 import requests
 import matplotlib.pyplot as plt
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
