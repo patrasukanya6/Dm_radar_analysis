@@ -1,6 +1,18 @@
 #!/bin/bash -l
-# This script resamples all netcdf files of TODAY onto a common grid and then plots the quic/project/meteo/data/kamacs/mom/klooks
-# author: Leonie von Terzi
+# Process daily radar Dm data for the EarthCARE comparison workflow.
+#
+# The script expects two configuration files. They are sourced to provide the
+# paths used by Dm_radar_comparison.py, including pathPro,
+# pathOutputData, pathDmData_tempfilter, and DiffRadarPlots.
+#
+# For each selected date, the Python script retrieves radar Dm, applies the
+# Cloudnet insect and temperature filters, writes the filtered NetCDF output,
+# and saves a quicklook plot. An email notification is sent after each year.
+#
+# Usage:
+#   ./Dm_radar_for_EarthCare_comparison.sh <config_file> <environment_file>
+#
+# The active date range is January-December 2025 and January-present 2026.
 
 
 # Argument validation check
@@ -85,7 +97,7 @@ do
                 echo $current_date
 #python $pathPro/Dm_radar_comparison_final.py $current_date $pathOutputData
 #python $pathPro/Dm_Disdrometer_comparison.py $current_date $pathOutputData $pathDisdrometer
-python $pathPro/Dm_radar_comparison_final.py $current_date $pathOutputData $pathDmData $DiffRadarPlots
+python $pathPro/Dm_radar_comparison.py $current_date $pathOutputData $pathDmData_tempfilter $DiffRadarPlots
 #python $pathCalibration/radar_calibration_plots_final.py $current_date K $pathXBand  $pathKaBand $pathWBand $pathOutputMeanData $pathOffsetData $pathDisdrometer $pathOutputPlots
 
 echo -----------------------
