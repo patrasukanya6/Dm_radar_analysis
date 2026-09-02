@@ -145,7 +145,7 @@ try:
         fntemp= ('/').join([pathOutputData, fileNameTemp])
         dataset_temp=xr.open_dataset(fntemp,chunks={'time':5000})
         temperature=dataset_temp.temperature
-        time=np.repeat(dataset_temp.time.values[np.newaxis, :], 137, axis=0)
+        time=np.repeat(dataset_temp.time.values[np.newaxis, :], dataset_temp.height.shape[0] ,axis=0) #137, axis=0)
         
         #plt.figure(figsize=(12, 4))
         #plt.pcolor(time.T,dataset_temp.height/1000,temperature,cmap='turbo')
