@@ -37,7 +37,7 @@ import shutil
 from sys import argv
 
 import os
-from HTI_PLOT_general_final import HTI_plot
+from HTI_PLOT_general import HTI_plot
 import xarray as xr
 import pandas as pd
 import numpy as np
